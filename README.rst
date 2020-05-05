@@ -2,6 +2,12 @@ gr_uvm_apb_agent
 ================
 UVM Reg Agent used with the gen_regs flow
 
+.. note ::
+
+  I am not a DV engineer. There are things that you may see here that you disagree with, and that's ok. I use this agent for designer
+  testing (and to some extent signoff testing). Some things done here may be against industry norms. I will say setups similar to
+  this (and by many counts `worse` than this) have been used to tapeout some of the chips you know and love. 
+
 
 ``gr_reg_pkg.sv``
   Main Package to pull in for registers. Include this repo's base dir and compile this package for simulation

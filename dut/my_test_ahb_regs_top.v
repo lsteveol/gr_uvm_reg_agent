@@ -1,14 +1,14 @@
 //===================================================================
 //
-// Created by sbridges on May/05/2020 at 11:28:54
+// Created by sbridges on May/05/2020 at 11:28:55
 //
-// my_test_regs_top.v
+// my_test_ahb_regs_top.v
 //
 //===================================================================
 
 
 
-module my_test_regs_top #(
+module my_test_ahb_regs_top #(
   parameter    ADDR_WIDTH = 8
 )(
   //REG1
@@ -24,18 +24,20 @@ module my_test_regs_top #(
   output wire [31:0]  swi_blabla,
 
   //DFT Ports (if used)
-  
-  // APB Interface
+
+    // AHB Interface
   input  wire RegReset,
   input  wire RegClk,
-  input  wire PSEL,
-  input  wire PENABLE,
-  input  wire PWRITE,
-  output wire PSLVERR,
-  output wire PREADY,
-  input  wire [(ADDR_WIDTH-1):0] PADDR,
-  input  wire [31:0] PWDATA,
-  output wire [31:0] PRDATA
+  input  wire                     hsel,
+  input  wire                     hwrite,
+  input  wire [1:0]               htrans,
+  input  wire [2:0]               hsize,    //not really supporting
+  input  wire [2:0]               hburst,   //not really supporting
+  input  wire [(ADDR_WIDTH-1):0]  haddr,
+  input  wire [31:0]              hwdata,
+  output wire [31:0]              hrdata,
+  output wire [1:0]               hresp,
+  output wire                     hready
 );
   
   //DFT Tieoffs (if not used)
@@ -44,49 +46,43 @@ module my_test_regs_top #(
   wire dft_hiz_mode = 1'b0;
   wire dft_bscan_mode = 1'b0;
 
-  //APB Setup/Access 
+  //AHB Setup/Access 
   wire [(ADDR_WIDTH-1):0] RegAddr_in;
   reg  [(ADDR_WIDTH-1):0] RegAddr;
   wire [31:0] RegWrData_in;
-  reg  [31:0] RegWrData;
+  //reg  [31:0] RegWrData;
+  wire [31:0] RegWrData;
   wire RegWrEn_in;
-  reg  RegWrEn_pq;
-  wire RegWrEn;
-
-  assign RegAddr_in = PSEL ? PADDR : RegAddr; 
-
-  always @(posedge RegClk or posedge RegReset) begin
-    if (RegReset) begin
-      RegAddr <= {(ADDR_WIDTH){1'b0}};
-    end else begin
-      RegAddr <= RegAddr_in;
-    end
-  end
-
-  assign RegWrData_in = PSEL ? PWDATA : RegWrData; 
-
-  always @(posedge RegClk or posedge RegReset) begin
-    if (RegReset) begin
-      RegWrData <= 32'h00000000;
-    end else begin
-      RegWrData <= RegWrData_in;
-    end
-  end
-
-  assign RegWrEn_in = PSEL & PWRITE;
-
-  always @(posedge RegClk or posedge RegReset) begin
-    if (RegReset) begin
-      RegWrEn_pq <= 1'b0;
-    end else begin
-      RegWrEn_pq <= RegWrEn_in;
-    end
-  end
-
-  assign RegWrEn = RegWrEn_pq & PENABLE;
+  reg  RegWrEn;
+  wire RegRdEn_in;
+  reg  RegRdEn;
   
-  //assign PSLVERR = 1'b0;
-  assign PREADY  = 1'b1;
+  wire htrans_valid;
+  
+  assign htrans_valid = (htrans == 2'b11) || (htrans == 2'b10);
+
+  assign RegAddr_in =            hsel && htrans_valid ? haddr : RegAddr; 
+  assign RegWrEn_in = hwrite  && hsel && htrans_valid;
+  assign RegRdEn_in = ~hwrite && hsel && htrans_valid;
+
+  always @(posedge RegClk or posedge RegReset) begin
+    if (RegReset) begin
+      RegAddr   <= {(ADDR_WIDTH){1'b0}};
+      RegWrEn   <= 1'b0;
+      RegRdEn   <= 1'b0;
+      //RegWrData <= 32'h00000000;
+    end else begin
+      RegAddr   <= RegAddr_in;
+      RegWrEn   <= RegWrEn_in;
+      RegRdEn   <= RegRdEn_in;
+      //RegWrData <= hwdata;
+    end
+  end
+  
+  assign RegWrData = hwdata;
+
+  //We are always ready to accept data
+  assign hready  = 1'b1;
   
 
 
@@ -237,17 +233,22 @@ module my_test_regs_top #(
   reg [31:0] prdata_sel;
   
   always @(*) begin
-    case(RegAddr)
-      'h0    : prdata_sel = REG1_reg_read;
-      'h4    : prdata_sel = REG2_reg_read;
-      'h8    : prdata_sel = REG3_reg_read;
-      'hc    : prdata_sel = REG4_reg_read;
+    if(RegRdEn) begin
+      case(RegAddr)
+       'h0    : prdata_sel = REG1_reg_read;
+       'h4    : prdata_sel = REG2_reg_read;
+       'h8    : prdata_sel = REG3_reg_read;
+       'hc    : prdata_sel = REG4_reg_read;
 
-      default : prdata_sel = 32'd0;
-    endcase
+        default : prdata_sel = 32'd0;
+      endcase
+    end else begin
+      prdata_sel = 32'd0;
+    end
   end
+    
   
-  assign PRDATA = prdata_sel;
+  assign hrdata = prdata_sel;
 
 
   
@@ -258,16 +259,20 @@ module my_test_regs_top #(
   reg pslverr_pre;
   
   always @(*) begin
-    case(RegAddr)
-      'h0    : pslverr_pre = 1'b0;
-      'h4    : pslverr_pre = 1'b0;
-      'h8    : pslverr_pre = 1'b0;
-      'hc    : pslverr_pre = 1'b0;
+    if(RegWrEn || RegRdEn) begin
+      case(RegAddr)
+       'h0    : pslverr_pre = 1'b0;
+       'h4    : pslverr_pre = 1'b0;
+       'h8    : pslverr_pre = 1'b0;
+       'hc    : pslverr_pre = 1'b0;
 
-      default : pslverr_pre = 1'b1;
-    endcase
+        default : pslverr_pre = 1'b1;
+      endcase
+    end else begin
+      pslverr_pre = 1'b0;
+    end
   end
   
-  assign PSLVERR = pslverr_pre;
+  assign hresp = pslverr_pre ? 2'b01 : 2'b00;
 
 endmodule

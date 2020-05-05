@@ -1,8 +1,8 @@
 //===================================================================
 //
-// Created by sbridges on May/05/2020 at 11:28:54
+// Created by sbridges on May/05/2020 at 11:28:55
 //
-// my_reg_model.sv
+// my_reg_model_ahb.sv
 //
 //===================================================================
 
@@ -26,7 +26,7 @@ class MY_REG_REG1_ extends uvm_reg;
   endfunction
 
   //Addr        : 0x0        (Includes Map Offset)
-  //Map         : MAP_APB     0x0
+  //Map         : MAP_AHB     0x0000
   //Reset       : 0x804     
   //Description : 
   function void build;
@@ -54,7 +54,7 @@ class MY_REG_REG2_ extends uvm_reg;
   endfunction
 
   //Addr        : 0x4        (Includes Map Offset)
-  //Map         : MAP_APB     0x0
+  //Map         : MAP_AHB     0x0000
   //Reset       : 0x70004d2 
   //Description : 
   function void build;
@@ -80,7 +80,7 @@ class MY_REG_REG3_ extends uvm_reg;
   endfunction
 
   //Addr        : 0x8        (Includes Map Offset)
-  //Map         : MAP_APB     0x0
+  //Map         : MAP_AHB     0x0000
   //Reset       : 0x5       
   //Description : 
   function void build;
@@ -100,7 +100,7 @@ class MY_REG_REG4_ extends uvm_reg;
   endfunction
 
   //Addr        : 0xc        (Includes Map Offset)
-  //Map         : MAP_APB     0x0
+  //Map         : MAP_AHB     0x0000
   //Reset       : 0x1e240   
   //Description : 
   function void build;
@@ -110,8 +110,8 @@ class MY_REG_REG4_ extends uvm_reg;
   endfunction
 endclass
 
-class my_reg_model extends uvm_reg_block;
-  `uvm_object_utils(my_reg_model)
+class my_reg_model_ahb extends uvm_reg_block;
+  `uvm_object_utils(my_reg_model_ahb)
 
   //RegBlock 
   rand MY_REG_REG1_                                       MY_REG_REG1;
@@ -120,40 +120,40 @@ class my_reg_model extends uvm_reg_block;
   rand MY_REG_REG4_                                       MY_REG_REG4;
 
   //Reg Map Declarations
-  uvm_reg_map MAP_APB;
+  uvm_reg_map MAP_AHB;
 
-  function new (string name = "my_reg_model");
+  function new (string name = "my_reg_model_ahb");
     super.new(name);
   endfunction
 
   function void build();
 
-    MAP_APB      = create_map("MAP_APB", 32'h0, 4, UVM_LITTLE_ENDIAN);
+    MAP_AHB      = create_map("MAP_AHB", 32'h0000, 4, UVM_LITTLE_ENDIAN);
     this.MY_REG_REG1 = MY_REG_REG1_::type_id::create("MY_REG_REG1");
     this.MY_REG_REG1.build();
     this.MY_REG_REG1.configure(this);
     this.MY_REG_REG1.add_hdl_path_slice("MY_REG_REG1", 32'h0, 32);
-    MAP_APB.add_reg(MY_REG_REG1, 32'h0, "RW");
+    MAP_AHB.add_reg(MY_REG_REG1, 32'h0, "RW");
 
     this.MY_REG_REG2 = MY_REG_REG2_::type_id::create("MY_REG_REG2");
     this.MY_REG_REG2.build();
     this.MY_REG_REG2.configure(this);
     this.MY_REG_REG2.add_hdl_path_slice("MY_REG_REG2", 32'h4, 32);
-    MAP_APB.add_reg(MY_REG_REG2, 32'h4, "RW");
+    MAP_AHB.add_reg(MY_REG_REG2, 32'h4, "RW");
 
     //THIS REG HAS BEEN DEFINED AS NO_REG_TEST
     this.MY_REG_REG3 = MY_REG_REG3_::type_id::create("MY_REG_REG3");
     this.MY_REG_REG3.build();
     this.MY_REG_REG3.configure(this);
     this.MY_REG_REG3.add_hdl_path_slice("MY_REG_REG3", 32'h8, 32);
-    MAP_APB.add_reg(MY_REG_REG3, 32'h8, "RW");
+    MAP_AHB.add_reg(MY_REG_REG3, 32'h8, "RW");
 
     uvm_resource_db#(bit)::set(.scope("REG::*MY_REG_REG3"), .name("NO_REG_TESTS"), .val(1), .accessor(this));
     this.MY_REG_REG4 = MY_REG_REG4_::type_id::create("MY_REG_REG4");
     this.MY_REG_REG4.build();
     this.MY_REG_REG4.configure(this);
     this.MY_REG_REG4.add_hdl_path_slice("MY_REG_REG4", 32'hc, 32);
-    MAP_APB.add_reg(MY_REG_REG4, 32'hc, "RW");
+    MAP_AHB.add_reg(MY_REG_REG4, 32'hc, "RW");
 
     this.lock_model();
   endfunction

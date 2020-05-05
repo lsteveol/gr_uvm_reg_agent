@@ -12,6 +12,7 @@ UVM Reg Agent used with the gen_regs flow
   the following:
   
   ::
+  
     get_reg("MY_REG_REG1");
     set_bf("BF1"        , 0); 
     set_reg();
@@ -19,7 +20,8 @@ UVM Reg Agent used with the gen_regs flow
 ``apb/``
   All APB related components.
 
-
+Examples
+--------
 ``example_apb``
   An example test environment using the ``gr_apb_env`` for register accesses. Built in UVM test sequences are used. Good starting
   point for new test environments.

@@ -95,6 +95,7 @@ class gr_apb_driver extends uvm_driver #(gr_apb_transfer);
       begin : timeout_proc
         #10us;
         `uvm_error(get_type_name(), "PREADY not recieved from DUT in 10us");
+        trans.err = 1;
       end
     
     join_any
@@ -105,6 +106,8 @@ class gr_apb_driver extends uvm_driver #(gr_apb_transfer);
       trans.data = vif.prdata;
       `uvm_info(get_type_name(),$psprintf("PRDATA received %8h", vif.prdata), UVM_DEBUG)
     end
+    
+    trans.err   = vif.pslverr;
     
     vif.psel    <= 0;
     vif.penable <= 0;

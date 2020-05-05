@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 `include "apb/gr_apb_if.sv"
 
 package gr_reg_pkg;

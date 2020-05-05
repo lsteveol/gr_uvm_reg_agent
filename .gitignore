@@ -1,0 +1,6 @@
+#Keep sim output from saving
+example_*/run/waves.shm
+example_*/run/xcelium.d
+example_*/run/xrun.history
+example_*/run/xrun.log
+example_*/run/.simvision

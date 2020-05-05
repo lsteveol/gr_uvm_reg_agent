@@ -33,7 +33,8 @@ class gr_apb_reg_adapter extends uvm_reg_adapter;
       rw.kind = (transfer.mem_type == APB_WRITE) ? UVM_WRITE : UVM_READ;
       rw.addr = transfer.addr;
       rw.data = transfer.data;  // For monitoring, need write data as well as read data
-      rw.status = UVM_IS_OK;
+      //rw.status = UVM_IS_OK;
+      rw.status = transfer.err ? UVM_NOT_OK : UVM_IS_OK;
 
      `uvm_info(get_type_name(), $psprintf("bus2reg: Transfer Address:%h Data:%h Direction:%s.",transfer.addr, transfer.data, transfer.mem_type.name), UVM_FULL)
 

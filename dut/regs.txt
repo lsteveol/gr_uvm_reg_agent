@@ -1,0 +1,15 @@
+REG1        RW
+  bf1       3'd4
+  bf2       8'd0
+  bf3       1'b1
+
+REG2        RW
+  bf4       18'd1234
+  reserved  6'd0
+  bf5       3'h7
+
+REG3        RW      {NO_REG_TEST}
+  bf6       4'd5
+
+REG4        RW
+  blabla    32'd123456

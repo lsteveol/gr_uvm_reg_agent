@@ -18,9 +18,9 @@ class apb_agent_hw_reset_test extends apb_agent_base_test;
     super.run_phase(phase);
     
     begin
-      uvm_reg_hw_reset_seq    seq;
+      gr_reg_hw_reset_seq    seq;
       
-      seq         = uvm_reg_hw_reset_seq::type_id::create("seq");
+      seq         = gr_reg_hw_reset_seq::type_id::create("seq");
       seq.model   = apb_env.reg_model;
       seq.start(null);
     end

@@ -64,5 +64,9 @@ package gr_reg_pkg;
   `include "ahb/gr_ahb_env.sv"
   
   `include "gr_reg_base_seq.sv"
+  
+  //Test Sequences since the UVM ones are doo doo
+  `include "sequences/gr_reg_hw_reset_seq.sv"
+  `include "sequences/gr_reg_bit_bash_seq.sv"
 
 endpackage

@@ -2,12 +2,16 @@
 
 `include "apb/gr_apb_if.sv"
 `include "ahb/gr_ahb_if.sv"
+`include "spi/gr_spi_if.sv"
 
 package gr_reg_pkg;
 
   import uvm_pkg::*;
   `include "uvm_macros.svh"
   
+  //===============================
+  // APB
+  //===============================
   typedef enum bit{
     APB_READ      = 0,
     APB_WRITE     = 1
@@ -23,6 +27,9 @@ package gr_reg_pkg;
   `include "apb/gr_apb_env.sv"
   
   
+  //===============================
+  // AHB
+  //===============================
   typedef enum bit{
     AHB_READ      = 0,
     AHB_WRITE     = 1
@@ -62,6 +69,36 @@ package gr_reg_pkg;
   `include "ahb/gr_ahb_monitor.sv"
   `include "ahb/gr_ahb_agent.sv"
   `include "ahb/gr_ahb_env.sv"
+  
+  //===============================
+  // SPI
+  //===============================
+  
+  typedef enum bit{
+    SPI_READ      = 0,
+    SPI_WRITE     = 1
+  } gr_spi_mem_type_t;
+  
+  typedef enum bit[7:0]{
+    SPI_SEND_HOST_ADDR_FOR_WRITE  = 8'b1000_1111,     //Send the Address for a host write
+    SPI_SEND_HOST_DATA_FOR_WRITE  = 8'b1010_1111,     //Send the Data for a host write
+    SPI_SEND_HOST_ADDR_FOR_READ   = 8'b1001_1111,     //Send the Address for a host read
+    SPI_SEND_HOST_READ_FOR_DATA   = 8'b1110_1111,     //
+    
+    SPI_SEND_SLAVE_WRITE_CONTROL  = 8'b0000_0100,     //Write the SPI Slave CONTROL Register
+    SPI_SEND_SLAVE_READ_STATUS    = 8'b0000_0000      //Reads the SPI Slave STATUS Register
+  } gr_spi_cmd_type_t;
+  
+  `include "spi/gr_spi_transfer.sv"
+  `include "spi/gr_spi_sequencer.sv"
+  `include "spi/gr_spi_reg_adapter.sv"
+  `include "spi/gr_spi_driver.sv"
+  `include "spi/gr_spi_monitor.sv"
+  `include "spi/gr_spi_agent.sv"
+  `include "spi/gr_spi_env.sv"
+  
+  
+  
   
   `include "gr_reg_base_seq.sv"
   

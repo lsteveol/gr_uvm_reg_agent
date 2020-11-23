@@ -12,7 +12,7 @@ Do we need a p_sequencer????
 .rst_end
 */
 
-class gr_reg_base_seq extends uvm_sequence;
+class gr_reg_base_seq #(type REQ = uvm_sequence_item, type RSP = REQ) extends uvm_sequence #(REQ,RSP);
 
   uvm_reg_block reg_model;
   uvm_status_e  status;

@@ -86,8 +86,11 @@ package gr_reg_pkg;
     SPI_SEND_HOST_READ_FOR_DATA   = 8'b1110_1111,     //
     
     SPI_SEND_SLAVE_WRITE_CONTROL  = 8'b0000_0100,     //Write the SPI Slave CONTROL Register
-    SPI_SEND_SLAVE_READ_STATUS    = 8'b0000_0000      //Reads the SPI Slave STATUS Register
+    SPI_SEND_SLAVE_READ_STATUS    = 8'b0100_0000      //Reads the SPI Slave STATUS Register
   } gr_spi_cmd_type_t;
+  
+  localparam SPI_STATUS_CMD_DONE = 0;
+  localparam SPI_STATUS_CMD_ERR  = 2;
   
   `include "spi/gr_spi_transfer.sv"
   `include "spi/gr_spi_sequencer.sv"

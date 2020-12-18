@@ -68,6 +68,9 @@ class gr_spi_driver #(int ADDR_WIDTH=64) extends uvm_driver #(gr_spi_transfer);
   
   virtual task drive_trans(gr_spi_transfer trans);
     bit [31:0]  rdata;
+    int         cmd_done_max_polls = 3;   //maximum number of times to check if a command is done before erroring
+    int         cmd_done_polls     = 0;
+    bit         cmd_done;
     
     `uvm_info(get_type_name(),$psprintf("Inside drive_trans: \n%s", trans.sprint()), UVM_HIGH)
     
@@ -78,23 +81,58 @@ class gr_spi_driver #(int ADDR_WIDTH=64) extends uvm_driver #(gr_spi_transfer);
       `uvm_info(get_type_name(),$psprintf("Clearing SPI Slave CONTROL Register"), UVM_HIGH)
       send_cmd_data(SPI_SEND_SLAVE_WRITE_CONTROL, 'h0, $ceil(ADDR_WIDTH/8));
       spi_slv_contrl_reg_is_set = 1;
+      
+      #100ns;
     end
     
-    #100ns;
     
     if(trans.mem_type == SPI_READ) begin
+      //------------------------
+      // READ Transaction
+      //------------------------
       `uvm_info(get_type_name(),$psprintf("Performing SPI Slave READ"), UVM_HIGH)
       send_cmd_data(SPI_SEND_HOST_ADDR_FOR_READ, trans.addr, $ceil(ADDR_WIDTH/8));
-      recv_data    (SPI_SEND_SLAVE_READ_STATUS,  rdata);  //add check here for error
+      recv_data    (SPI_SEND_SLAVE_READ_STATUS,  rdata);  
+      
+      //Check for command (APB transaction) completed
+      cmd_done = rdata[SPI_STATUS_CMD_DONE];
+      while(~cmd_done) begin
+        recv_data    (SPI_SEND_SLAVE_READ_STATUS,  rdata);
+        cmd_done = rdata[SPI_STATUS_CMD_DONE];
+        cmd_done_polls++;
+        if(cmd_done_polls >= cmd_done_max_polls) begin
+          `uvm_fatal("SPI CMD Done Polling Maxed!",$psprintf("SPI Transaction did not complete in %0d polling attempts!", cmd_done_max_polls));
+        end
+      end
+      
+      trans.err = rdata[SPI_STATUS_CMD_ERR];
+      
       recv_data    (SPI_SEND_HOST_READ_FOR_DATA, rdata);
       trans.data = rdata;
       
       `uvm_info(get_type_name(),$psprintf("SPI Slave READ Data: 0x%8h", trans.data), UVM_HIGH)
     end else begin
+      //------------------------
+      // Write Transaction
+      //------------------------
       `uvm_info(get_type_name(),$psprintf("Performing SPI Slave READ"), UVM_HIGH)
       send_cmd_data(SPI_SEND_HOST_ADDR_FOR_WRITE, trans.addr, $ceil(ADDR_WIDTH/8));
       send_cmd_data(SPI_SEND_HOST_DATA_FOR_WRITE, trans.data, 4);
-      recv_data    (SPI_SEND_SLAVE_READ_STATUS,  rdata);  //add check here for error
+      recv_data    (SPI_SEND_SLAVE_READ_STATUS,  rdata);  
+      
+      //Check for command (APB transaction) completed
+      cmd_done = rdata[SPI_STATUS_CMD_DONE];
+      while(~cmd_done) begin
+        recv_data    (SPI_SEND_SLAVE_READ_STATUS,  rdata);
+        cmd_done = rdata[SPI_STATUS_CMD_DONE];
+        cmd_done_polls++;
+        if(cmd_done_polls >= cmd_done_max_polls) begin
+          `uvm_fatal("SPI CMD Done Polling Maxed!",$psprintf("SPI Transaction did not complete in %0d polling attempts!", cmd_done_max_polls));
+        end
+      end
+      
+      trans.err = rdata[SPI_STATUS_CMD_ERR];
+      
     end
   
     

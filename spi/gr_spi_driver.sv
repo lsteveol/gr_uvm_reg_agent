@@ -7,15 +7,17 @@ gr_spi_driver
 
 .rst_end
 */
-class gr_spi_driver #(int ADDR_WIDTH=64, int polling_attempts=10) extends uvm_driver #(gr_spi_transfer);
+class gr_spi_driver #(int ADDR_WIDTH=64) extends uvm_driver #(gr_spi_transfer);
   
   virtual gr_spi_if     vif;
+  
+  int polling_attempts=10;
   
   //We have to set the SPI Slave CONTROL reg prior to operation
   bit                   spi_slv_contrl_reg_is_set = 0;
   bit [31:0]            miso_rdata;
   
-  `uvm_component_param_utils_begin(gr_spi_driver#(ADDR_WIDTH, polling_attempts))
+  `uvm_component_param_utils_begin(gr_spi_driver#(ADDR_WIDTH))
   `uvm_component_utils_end
   
   function new (string name, uvm_component parent);

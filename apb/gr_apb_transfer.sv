@@ -4,7 +4,7 @@
 class gr_apb_transfer extends uvm_sequence_item;                                  
 
   rand bit [31:0]         data;
-  rand bit [31:0]         addr;	
+  rand bit [63:0]         addr;	
   rand gr_apb_mem_type_t  mem_type;
   bit                     err;
    

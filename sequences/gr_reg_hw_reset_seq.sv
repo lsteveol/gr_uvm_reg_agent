@@ -155,4 +155,4 @@ class gr_reg_hw_reset_seq extends uvm_reg_sequence #(uvm_sequence #(uvm_reg_item
    virtual task reset_blk(uvm_reg_block blk);
    endtask
 
-endclass: uvm_reg_hw_reset_seq
+endclass

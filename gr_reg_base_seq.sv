@@ -22,11 +22,14 @@ class gr_reg_base_seq #(type REQ = uvm_sequence_item, type RSP = REQ) extends uv
   
   uvm_reg        local_reg;
   uvm_reg_field  local_reg_field;
-
+  bit reg_back_door;
 
   function new(string name="gr_reg_base");
 		super.new(name);
     get_model();  //can we do this?
+    if(uvm_config_db #(bit)::get(null, "*", "ral_backdoor", reg_back_door)) begin
+      if(!reg_back_door) `uvm_error("INVALID_REG_BD_ACCESS", "reg back door access configured but set to zero")
+    end else reg_back_door = 0;
 	endfunction
   
 
@@ -45,6 +48,7 @@ class gr_reg_base_seq #(type REQ = uvm_sequence_item, type RSP = REQ) extends uv
         `uvm_fatal("NO_REG_CONFIG", "Reg Model is not set, Exiting");
       end
     end
+    
   endfunction : get_model
 
 
@@ -76,6 +80,16 @@ class gr_reg_base_seq #(type REQ = uvm_sequence_item, type RSP = REQ) extends uv
   //should be preformed prior to any get_bf/set_bf functions
   virtual task get_reg(string reg_name);
     local_reg = reg_model.get_reg_by_name(reg_name);
+    if(reg_back_door && local_reg.has_hdl_path()) local_reg.read(status, VAL, UVM_BACKDOOR, .parent(this));
+    else local_reg.read(status, VAL);
+    local_reg.predict(VAL);
+    //local_reg.print();
+    //$display("%s read: %8h", reg_name, VAL);
+  endtask
+
+  //Performs force front door read when reg backdoor is configured 
+  virtual task get_reg_fd(string reg_name);
+    local_reg = reg_model.get_reg_by_name(reg_name);
     local_reg.read(status, VAL);
     local_reg.predict(VAL);
     //local_reg.print();
@@ -104,6 +118,24 @@ class gr_reg_base_seq #(type REQ = uvm_sequence_item, type RSP = REQ) extends uv
     if(reg_name != "NULL") begin
       //Just a write with value
       local_reg = reg_model.get_reg_by_name(reg_name);
+      if(reg_back_door && local_reg.has_hdl_path()) local_reg.write(status, wval[31:0], UVM_BACKDOOR, .parent(this));
+      else local_reg.write(status, wval[31:0]);
+    end else begin
+      //You did a previous read
+      if(wval != 33'h1_0000_0000) begin   //<--- what a hack
+        local_reg.write(status, wval[31:0]);
+      end else begin
+        if(reg_back_door && local_reg.has_hdl_path()) local_reg.write(status, local_reg.get(), UVM_BACKDOOR, .parent(this));
+        else local_reg.write(status, local_reg.get());                
+      end
+    end
+  endtask
+ 
+  //Performs force front door write when reg backdoor is configured
+   virtual task set_reg_fd(string reg_name = "NULL", input bit[32:0] wval = 33'h1_0000_0000);
+    if(reg_name != "NULL") begin
+      //Just a write with value
+      local_reg = reg_model.get_reg_by_name(reg_name);
       local_reg.write(status, wval[31:0]);
     end else begin
       //You did a previous read
@@ -113,7 +145,8 @@ class gr_reg_base_seq #(type REQ = uvm_sequence_item, type RSP = REQ) extends uv
         local_reg.write(status, local_reg.get());
       end
     end
-  endtask
+  endtask 
+  
 
 endclass
 

@@ -37,14 +37,14 @@ class gr_apb_driver extends uvm_driver #(gr_apb_transfer);
   
   virtual task reset_signals();
     forever begin
-      //wait(vif.reset);
+      //wait(vif.cb.reset);
       @(negedge vif.reset);
       `uvm_info(get_type_name(),$psprintf("Resetting APB Driver"), UVM_DEBUG)
-      vif.pwdata  <= 'd0;
-      vif.paddr   <= 0;
-      vif.penable <= 0;
-      vif.psel    <= 0;
-      vif.pwrite  <= 0;
+      vif.cb.pwdata  <= 'd0;
+      vif.cb.paddr   <= 0;
+      vif.cb.penable <= 0;
+      vif.cb.psel    <= 0;
+      vif.cb.pwrite  <= 0;
     end
   endtask
   
@@ -68,33 +68,33 @@ class gr_apb_driver extends uvm_driver #(gr_apb_transfer);
     
     `uvm_info(get_type_name(),$psprintf("Inside drive_trans: \n%s", trans.sprint()), UVM_DEBUG)
     
-    @(posedge vif.clk);
+    @(vif.cb);
     
     //Address Phase
-    vif.paddr   <= trans.addr;
-    vif.psel    <= 1;
-    vif.penable <= 0;
+    vif.cb.paddr   <= trans.addr;
+    vif.cb.psel    <= 1;
+    vif.cb.penable <= 0;
     
-    vif.pwrite  <= trans.mem_type == APB_WRITE ? 1          : 0;
-    vif.pwdata  <= trans.mem_type == APB_WRITE ? trans.data : vif.pwdata; //make this randomize?
+    vif.cb.pwrite  <= trans.mem_type == APB_WRITE ? 1          : 0;
+    vif.cb.pwdata  <= trans.mem_type == APB_WRITE ? trans.data : vif.cb.pwdata; //make this randomize?
     
     //Data Phase
-    @(posedge vif.clk);
-    vif.penable <= 1;
+    @(vif.cb);
+    vif.cb.penable <= 1;
     
     
     fork : pready_to
       begin : pready_proc
         do begin
-          @(posedge vif.clk);
-        end while(vif.pready === 0);
+          @(vif.cb);
+        end while(vif.cb.pready === 0);
         `uvm_info(get_type_name(),$psprintf("Pready seen"), UVM_DEBUG)
         disable timeout_proc;
       end
       
       begin : timeout_proc
-        #10us;
-        `uvm_error(get_type_name(), "PREADY not recieved from DUT in 10us");
+        #100us;
+        `uvm_error(get_type_name(), "PREADY not recieved from DUT in 100us");
         trans.err = 1;
       end
     
@@ -103,15 +103,19 @@ class gr_apb_driver extends uvm_driver #(gr_apb_transfer);
     
     //Get Data if read
     if(trans.mem_type == APB_READ) begin
-      trans.data = vif.prdata;
-      `uvm_info(get_type_name(),$psprintf("PRDATA received %8h", vif.prdata), UVM_DEBUG)
+      trans.data = vif.cb.prdata;
+      `uvm_info(get_type_name(),$psprintf("PRDATA received %8h", vif.cb.prdata), UVM_DEBUG)
     end
     
-    trans.err   = vif.pslverr;
+    trans.err   = vif.cb.pslverr;
     
-    vif.psel    <= 0;
-    vif.penable <= 0;
-    vif.pwrite  <= 0;    
+    if(vif.cb.pslverr) begin
+      `uvm_error(get_type_name(), "PSLVERR Seen");
+    end
+    
+    vif.cb.psel    <= 0;
+    vif.cb.penable <= 0;
+    vif.cb.pwrite  <= 0;    
     
   endtask
   
